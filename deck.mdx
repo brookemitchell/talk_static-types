@@ -1,0 +1,246 @@
+import { prism, swiss } from '@mdx-deck/themes';
+
+export const themes = [prism, swiss];
+
+# static types
+
+---
+
+# brooke mitchell
+
+---
+
+# why add types?
+
+- encode developer intent
+
+- catch common mistakes
+
+- move runtime errors to compile time
+
+- developer experience
+  - _(show rafInterval)_
+
+---
+
+# technical detour
+
+---
+
+# structural type system
+
+```ts
+/* same shape as HTMLInputElement */
+interface xType { id : string; hidden: boolean; /* ... */ }
+let x: xType = {id:'ok', hidden: false, /*... */}
+// assign x
+function validate(input: HTMLInputElement) {
+...
+}
+validate(x); // ✅
+```
+
+- structural type systems only care about the shape of an object.
+
+---
+
+# flow vs typescript
+
+### my opinion 🤷‍♂
+
+| Attribute            | Flow    | TS   | Importance |
+| -------------------- | ------- | ---- | ---------- |
+| Inference            | V Good  | Good | minor      |
+| Gradual Adoption     | V Good  | Good | minor      |
+| React typings        | V Good  | Good | Average    |
+| Error Clarity        | P bad\* | OK   | Average    |
+| Community Adoption   | OK      | Best | MAJOR      |
+| Docs/Resources       | OK      | Best | MAJOR      |
+| Developer Experience | OK      | Best | MAJOR      |
+
+\*_last used it ~5 months ago_
+
+---
+
+# type systems - the greatest hits. :sunglasses: :100: :guitar:
+
+---
+
+# inference
+
+```ts
+let zz = 41;
+zz = 'abc'; // 🚨 ERROR Type '"abc"' is not assignable to type 'number'.
+let aa = ['hello'];
+aa.push('abc');
+aa.push(33); // 🚨 ERROR: Argument of type '33' is not assignable to parameter of type 'string'.
+```
+
+---
+
+# inference
+
+```ts
+window.onmousedown = function(mouseEvent) {
+  console.log(mouseEvent.button); //<- OK
+  console.log(mouseEvent.kangaroo); // 🚨 ERROR
+};
+```
+
+---
+
+# annotation
+
+```ts
+// A tuple, only ever has 4 items
+let bb: [number, string, string, number] = [
+  123,
+  'Fake Street',
+  'Nowhere, USA',
+  10110
+];
+
+bb = [1, 2, 3, 4]; // 🚨 ERROR: Type 'number' is not assignable to type 'string'.
+```
+
+---
+
+# objects
+
+```ts
+interface Address {
+  houseNumber: number;
+  streetName: string;
+  owner?: string; // optional field
+}
+
+let cc: Address = {
+  houseNumber: 123
+};
+
+/**
+ * 🚨 Property 'streetName'
+ * 🚨   is missing in type   '{ houseNumber: number; }'
+ * 🚨   but required in type '{ houseNumber: number; streetName: string; owner?: string}'.
+ */
+```
+
+---
+
+# union types
+
+```ts
+/**
+ * Takes a string and adds "padding" to the left.
+ */
+type PaddingUnion = string | number; // <- type alias
+function padLeft(value: string, padding: PaddingUnion) {
+  // ...
+  // inferred type guard, know its a string inside `if` block
+  if (padding.length) {
+    let x = padding.length;
+  }
+  // ...
+}
+
+let indentedString = padLeft('Hello world', true); // errors during compilation
+```
+
+---
+
+# generics
+
+```ts
+function identity<T>(arg: T): T {
+  return arg;
+}
+let output = identity<string>('myString'); // type of output will be 'string'
+```
+
+---
+
+# higher order types
+
+```ts
+type User = {
+  id: number;
+  name: string;
+  location: string;
+  registeredAt: Date;
+};
+
+Exclude<User, "id" | "registeredAt"> // removes id and registeredAt
+```
+
+---
+
+# how vetradar uses types 🕵️‍♀️
+
+---
+
+# react
+
+```tsx
+type Props = {
+  type: 'now' | 'discharge'
+  value: 'now' | 'discharge' | Date
+  onChange: (date: Props['value']) => void
+}
+const TimePicker: React.FC<Props> = ({
+  value,
+  type,
+  onChange,
+}) => { /* ... */ }
+
+<TimePicker value='nowBlah' ... /> // ERROR!
+
+```
+
+---
+
+# platform
+
+```ts
+type TaskTransitionOptions = {
+  timestamp: Date;
+};
+
+interface ITaskTransitionService {
+  options: TaskTransitionOptions;
+  process(): Promise<void>;
+}
+
+class TaskTransitionService extends ITaskTransitionService {
+  constructor(options) {
+    this.options = options;
+  }
+  process() {}
+}
+```
+
+---
+
+# shared.
+
+```tsx
+/**
+ *   The Status a given Task can be in over time.
+ */
+export enum Status {
+  MISSED = 'MISSED',
+  PENDING = 'PENDING'
+  // ...
+}
+
+// Front End
+const MissedTask = () => (
+  <Task status={{ state: Status.MISSED }} onPress={taskCb} />
+);
+
+// Back End
+let task: Task;
+if (moment.utc() < dueStartAt) {
+  task.status = Status.PENDING;
+  return task;
+}
+```
